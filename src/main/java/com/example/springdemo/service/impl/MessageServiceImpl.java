@@ -6,42 +6,38 @@ import com.example.springdemo.service.MessageService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.ZoneOffset;
-import java.util.PriorityQueue;
 import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.*;
 
 import static java.lang.Thread.sleep;
 
 @Slf4j
 public class MessageServiceImpl implements MessageService {
-    PriorityQueue<Message> priorityQueue = new PriorityQueue<>((m1, m2) -> {
+    PriorityBlockingQueue<Message> queue = new PriorityBlockingQueue<>(100, (m1, m2) -> {
         long result = m2.getTimeStamp() - m1.getTimeStamp();
-        if(result > 0) return 1;
-        if (result < 0) return -1;
+        if (result > 0) return -1;
+        if (result < 0) return 1;
         return 0;
     });
 
-    AtomicReference<PriorityQueue<Message>> queue = new AtomicReference<>();
+    ThreadPoolExecutor taskExecutor = new ThreadPoolExecutor(30, 50, 60, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(1000), new ThreadPoolExecutor.CallerRunsPolicy());
 
-    ThreadPoolExecutor executor = new ThreadPoolExecutor(30, 50, 60,TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(1000), new ThreadPoolExecutor.CallerRunsPolicy());
+
+    ThreadPoolExecutor msgExecutor = new ThreadPoolExecutor(10, 50, 60, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(1000), new ThreadPoolExecutor.CallerRunsPolicy());
 
     Random random = new Random();
 
     @Override
     public void run() {
         log.info("message service is running...");
-        queue.set(priorityQueue);
         while (true) {
-            Message message = queue.get().peek();
-            if(message != null) {
-                if(message.getTimeStamp() <= System.currentTimeMillis()) {
-                    queue.get().poll();
-                    executor.execute(() -> {
+            Message message = queue.peek();
+            if (message != null) {
+                if (message.getTimeStamp() <= System.currentTimeMillis()) {
+                    queue.poll();
+                    taskExecutor.execute(() -> {
                         try {
                             sendMsg(message);
                         } catch (InterruptedException e) {
@@ -61,14 +57,17 @@ public class MessageServiceImpl implements MessageService {
     }
 
     private void sendMsg(Message message) throws InterruptedException {
-        log.info("thread: {}, send message... id: {}, content: {}",
-                Thread.currentThread().getName(), message.getId(), message.getContent());
+        // 模拟同时发送20个用户
+        for(int i = 0; i < 20; i++) {
+            msgExecutor.execute(() -> log.info("thread: {}, send message... id: {}, content: {}",
+                    Thread.currentThread().getName(), message.getId(), message.getContent()));
+        }
         sleep(random.nextInt(10000));
     }
 
     @Override
     public void addMessage(MessageReq req) {
         log.info("add msg: {}", req);
-        queue.get().offer(new Message(req.getId(), req.getDateTime().toInstant(ZoneOffset.of("+8")).toEpochMilli(), req.getContent()));
+        queue.offer(new Message(req.getId(), req.getDateTime().toInstant(ZoneOffset.of("+8")).toEpochMilli(), req.getContent()));
     }
 }
