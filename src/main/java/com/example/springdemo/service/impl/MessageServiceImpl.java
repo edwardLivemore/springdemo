@@ -4,6 +4,7 @@ import com.example.springdemo.dto.Message;
 import com.example.springdemo.req.MessageReq;
 import com.example.springdemo.service.MessageService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.time.ZoneOffset;
 import java.util.Random;
@@ -12,6 +13,7 @@ import java.util.concurrent.*;
 import static java.lang.Thread.sleep;
 
 @Slf4j
+@Service
 public class MessageServiceImpl implements MessageService {
     PriorityBlockingQueue<Message> queue = new PriorityBlockingQueue<>(100, (m1, m2) -> {
         long result = m2.getTimeStamp() - m1.getTimeStamp();
