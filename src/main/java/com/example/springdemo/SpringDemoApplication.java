@@ -8,11 +8,16 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
+import java.util.Arrays;
+
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 public class SpringDemoApplication implements ApplicationRunner {
 	@Autowired
 	private MessageService messageService;
+
+	@Autowired
+	private String[] numberArray;
 
 	public static void main(String[] args) {
 		SpringApplication.run(SpringDemoApplication.class, args);
@@ -20,6 +25,7 @@ public class SpringDemoApplication implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
+		System.out.println(Arrays.toString(numberArray));
 		messageService.run();
 	}
 }
