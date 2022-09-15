@@ -26,6 +26,7 @@ public class SpringDemoApplication implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		System.out.println(Arrays.toString(numberArray));
-		messageService.run();
+//		messageService.run();
+//		messageService.showMessage();
 	}
 }

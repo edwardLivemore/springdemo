@@ -6,4 +6,6 @@ public interface MessageService {
     void run();
 
     void addMessage(MessageReq req);
+
+    void showMessage();
 }

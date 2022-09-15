@@ -22,6 +22,9 @@ public class MessageServiceImpl implements MessageService {
     @Autowired
     private ThreadPoolExecutor sendPool;
 
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 20, 60, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(200), new ThreadPoolExecutor.CallerRunsPolicy());
+
     PriorityBlockingQueue<Message> queue = new PriorityBlockingQueue<>(100, (m1, m2) -> {
         long result = m2.getTimeStamp() - m1.getTimeStamp();
         if (result > 0) return -1;
@@ -71,5 +74,16 @@ public class MessageServiceImpl implements MessageService {
     public void addMessage(MessageReq req) {
         log.info("add msg: {}", req);
         queue.offer(new Message(req.getId(), req.getDateTime().toInstant(ZoneOffset.of("+8")).toEpochMilli(), req.getContent()));
+    }
+
+    @Override
+    public void showMessage() {
+        log.info("show message start...");
+        int count = 100;
+        for (int i = 0; i < count; i++) {
+            int finalI = i;
+            executor.execute(() -> log.info(String.valueOf(finalI)));
+        }
+        log.info("show message end...");
     }
 }
